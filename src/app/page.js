@@ -1,95 +1,61 @@
-import Image from "next/image";
+'use client'
+
+import Loading from "./Loading.js";
+import Link from 'next/link'
+import Prompt from "./Prompt.js"
 import styles from "./page.module.css";
+import Image from "next/image"
+import headshot from "../../public/me.jpg"
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasBootPlayed = sessionStorage.getItem('bootPlayed');
+      if (!hasBootPlayed) {
+        sessionStorage.setItem('bootPlayed', 'true');
+        setLoading(true); // Update state to show animation
+      } else {
+        setLoading(false); // Skip animation
+      }
+    }
+  }, []);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+  if (loading) {
+    return <Loading onComplete={() => {
+      setLoading(false);
+      sessionStorage.setItem('bootPlayed', 'true');
+    }}/>
+  }
+  return (
+    <div className="flex flex-row justify-center">
+      <div className="flex flex-col h-screen w-1/2 max-sm:w-screen">
+        <div className="flex flex-row flex-wrap items-center justify-around w-full mt-16">
+          <Image className="w-96 max-sm:w-40" src={headshot} alt="A portrait of me"/>
+          <h1 className="leading-tight text-7xl max-sm:text-2xl font-bold">I&apos;m<br/><strong className="text-accent">Mariano<br/>Rodriguez</strong></h1>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="w-full text-4xl mt-12 max-sm:text-xl max-sm:p-4">
+          <Prompt cmd="cat tagline.txt"/>
+          <p className="mt-4">
+            I love building things and I love building them <strong>right</strong>. 
+          </p>
+        </div>
+        <div className="w-full text-4xl mt-6 max-sm:text-xl max-sm:p-4">
+          <Prompt cmd="ls"/>
+          <div className="grid grid-cols-4 max-md:grid-cols-2 mt-4 text-primary">
+            <Link className="underline hover:no-underline" href="/about">About/</Link>
+            <Link className="underline hover:no-underline" href="/blog">Blog/</Link>
+            <Link className="underline hover:no-underline" href="/contact">Contact/</Link>
+            <a className="underline hover:no-underline" href="https://github.com/mariano-f-r">GitHub/</a>
+            <a className="underline hover:no-underline" href="https://www.linkedin.com/in/marianofr/">LinkedIn/</a>
+            <Link className="text-accent font-semibold hover:brightness-200 underline hover:no-underline" href="/projects">Projects/</Link>
+            <a href="/resume.pdf" alt="my resume" target="_blank" rel="noopener noreferrer">resume.pdf</a>
+            <p>tagline.txt</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
