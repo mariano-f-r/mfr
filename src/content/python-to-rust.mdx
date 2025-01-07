@@ -1,0 +1,163 @@
+---
+title: "My Journey Learning Rust"
+author: "Mariano Rodriguez"
+desc: "And my theories on why some people just can't make the jump"
+tags: "Rust, Python, Learning"
+date: "6/2/2025"
+image: "/manatpinacle.jpg"
+---
+
+Note: this is not a guide of any sort, and isn't intended to thoroughly teach Rust. It is moreso a reflection and perhaps
+maybe a little hypetrain. You decide.
+
+# Some Backstory
+
+Like a lot of new programmers in the modern era, I wrote my very first lines of code using the Python programming language.
+Honestly, it was great. Things were really simple, and that made programming easy. Anything I thought would work usually
+did. And with such a plethora of libraries to work with it meant that basically anything I thought of was possible? Wanna
+make a video game? Reach for PyGame. Need a website? Go for Flask, or Django for something heavy duty. I must've made tens 
+of things, many of which I thought ridiculously complex. With Python, it seemed like the whole world of computers was at my 
+feet.
+
+Seemed. But after a while I realized that the rabbit hole went further. The thing that clued me in was Linux.
+See, my very first computer was a cheap Acer Chromebook that was given to me for middle school, and after graduating
+middle school, I got into programming. Seeing as my Chromebook could only open webpages, I scoured the web to find out
+how I could make it usable for programming. The result was me flashing Linux onto the laptop, and learning it from there.
+And after a while of learning how to use a terminal to make commands run, I noticed something: No command had `python3` in 
+front of it. This revelation led to some waryness about just how used my trusty sidekick really was. This was only compounded 
+by an experience I had over the summer leading into my third year of high school, wherein I attended a summer program where I
+learned how to use Swift to make mobile apps.
+
+Swift dazzled me. The combination of seeing a language transcend the janky nature of running Python in an elegant and refined way,
+as well as the whole new world of ergonomics that Swift came with built-in, and perhaps chiefly, the now inability to use the hackiness
+that Python had afforded me originally (keep this in mind), like mutating global variables inside functions. Clearly, this *was* a 
+better horse, albeit seemingly harder to master. 
+
+But I figured it must be worth it, lest nobody use it. That's how the idea came to me to try Rust (since I couldn't use Swift
+as I didn't have a Mac). Rust seemed to me to be a faster horse.
+
+# Starting Out
+
+In August of 2022, I downloaded the Rust toolchain. Right off the bat, I could tell that there was something different about Rust.
+For starters, the main function is the entry point of the program and the code you want to run must be inside of it (very unremarkable
+to the wise amongst you, I'm sure, but 16 year old me knew nothing but Python). And compiling code? To me it was unheard of (Xcode elided
+this part of Swift). Already, as someone who was coming from Python, I had seemingly been thrown off the deep end into the real world
+of writing code.
+
+The biggest hurdle I faced early on was memory however. Rust has a clever mechanism for managing memory called ownership, wherein each
+value in memory has an owner, and may be referenced (many times for reading, but at most once mutably at any given time), but will not 
+disappear from memory as long as it's owner is in scope. Someone coming from only Python would not understand the previous sentence very 
+well however. Memory was a foreign concept to me at the time, and having to learn about things like the stack and the heap was a
+new experience and made the language intimidating. But given time, I was slowly able to get a handle on these things, as well as other 
+more sophisticated programming features, like interfaces (called traits in Rust), Rust's verbose but expressive syntax, and generics 
+(and strong typing in general). 
+
+
+# More Fundamental Differences
+
+By this point, I was no longer struggling nearly as much with language details. The big differences that I was starting to encounter were
+idiomatic. For example, Rust has no Object Oriented Programming, which will seem strange to anyone who has cut their teeth on it. How
+do things get represented without classes? What is data like? Rust's answer to this is a total departure from OOP into the paradigm of 
+functional programming. Firstly, to deal with representing data, Rust provides algebraic datatypes. These algebraic datatypes, enums and structs, 
+are simple, and in some ways similar to classes (especially structs). You can even write methods for them (but they aren't the same as OOP methods
+as I'll touch on shortly). The power in these algebraic data types comes in being able to encompass data, and lots of it, well. I'll provide a small 
+example.
+
+Here is a domicile, either a house or an apartment, represented in Python:
+```python
+class Domicile:
+  def __init__(self, isApartment, unit_number, floors, address):
+    self.apartment = isApartment # true or false
+    self.unit_number = unit_number
+    self.floors = floors
+    self.address =  address
+```
+
+A few undesirable things are happening here, namely that houses can be assigned unit numbers, and apartments can have multiple floors. To make it better,
+we could use inheritance to define a domicile superclass and make subclasses for apartments and houses, or an interface. Rust has no such need though,
+since it can represent the data pretty well at the first go around:
+
+
+```rust
+enum Domicile:
+  Apartment {
+    unit_number: u16,
+    address: String,
+  }
+  House {
+    floors: u8,
+    address: String,
+  }
+}
+```
+
+As you can see, Rust has no need to separate things, as by virtue of being able to make enums with members that have fields, we can represent the duality
+of domiciles thoroughly, and keep them together because they are domiciles. This even leads to one of Rust's greatest ideas, the inclusion of the monad as
+a easy to use language construct. The TL;DR on this is that you can represent a fallible operation as an enum, wherein the operation's value is one variant
+of an enum, and the possible error is another. This is a stark departure from other typical programming languages, but compared to exceptions, it forces the
+programmer to realize that, no exceptions are not indeed exceptional, errors happen all the time. These enums are so powerful, that Rust even provides
+a way to interact with their variants through control flow - the `match` construct, which provides compiler enforced checking of what variant an enum is.
+Here it is in action:
+
+```rust
+enum Result<T, E> {
+  Ok(T),
+  Err(E),
+}
+
+let maybe_valid = fallible_operation();
+
+match maybe_valid {
+  Ok(real_value) => {
+    println!("Got {}", real_value)
+  }
+  Err(error) => {
+    println!("Had error: {}", error);
+  }
+}
+```
+
+So that's data, but what about behavior? Since Rust is indeed a child of functional programming (Ocaml to be precise), it's way of having behavior is similar:
+data is transformed or absorbed through functions. Functions are everywhere in Rust. They are such a powerful abstraction, that a lot of times, 
+iteration in Rust can be eschewed by reaching for the right standard library endorsed iterator methods.
+
+Speaking of methods, remember how I mentioned how Rust has methods, but they are different? Let me show you a method signature:
+
+```rust
+// real function
+fn globnicate(target: &mut Glorb, glorp_strength: u32) -> () {
+  // --snip--
+}
+
+struct Glorb {
+  glorb: u32
+}
+
+impl Glorb {
+  // method
+  fn frobnicate(&mut self, glorp_strength: u32) -> () {
+    // --snip--
+  }
+}
+```
+
+Notice how it looks like a normal function except it takes self as a parameter? That's because in reality, that's all it really is. The method's in Rust are
+just syntactic sugar for functions that operate on instances of the given type. This function also returns something: `()`. What is `()`? It is part of Rust's
+rich type system, called the unit value. It is a value with no substance. Rust has another similar type called `!`, or the never type. It is used to represent
+return values for functions that never return, like the process exit function. Python certainly doesn't have this.
+
+# Python doesn't have this
+
+Therein lies the biggest obstacle I find when making the switch: the learning curve. When you move from another language to Rust, the thing that is probably the
+biggest shock is the new paradigm. Sure, learning new syntax is annoying, but learning a new way to think is just straight up difficult. So difficult, that often
+some developers will try to write Rust as they've written other languages. This will fail, and will lead to them to believe that Rust is a bad language. The truth
+is that it isn't. Really, if you come to understand Rust's paradigm and grow comfortable with functional programming, Rust provides a great experience
+for programming. If.
+
+Specifically when moving from Python to Rust, a lot of hackiness doesn't exist. Things like global variables are frowned upon (and tedious to work with), and casting
+things is a somewhat annoying process. The result is that generally, compared to Python, in Rust, you must have a clear idea of how data is flowing through your 
+program, whereas in Python you can sort of make things happen, until eventually you have a working program.
+
+Only once you defeat these preconceived notions about how code should be written and accept Rust's version of how the world works, will you be able to write good
+clean Rust code (This goes for any programming language really). It was once said that many programming languages make simple things easy, and complex things possible,
+whereas Rust makes simple things possible, and complex things easy. I think it's worth the time and the effort.
