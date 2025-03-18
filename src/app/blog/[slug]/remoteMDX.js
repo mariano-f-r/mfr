@@ -1,4 +1,5 @@
 import { MDXRemote } from "next-mdx-remote/rsc";
+import Image from "next/image";
 
 const components = {
 	h1: (props) => (
@@ -31,6 +32,25 @@ const components = {
 			{props.children}
 		</pre>
 	),
+	a: (props) => (
+		<a {...props} className="underline text-secondary">
+			{props.children}
+		</a>
+	),
+	img: (props) => (
+		<Image {...props} width={16 * 60} height={9 * 60} alt={props.alt} />
+	),
+	ul: (props) => (
+		<ul {...props} className="list-disc list-inside">
+			{props.children}
+		</ul>
+	),
+	ol: (props) => (
+		<ol {...props} className="list-decimal list-inside">
+			{props.children}
+		</ol>
+	),
+	li: (props) => <li {...props}>{props.children}</li>,
 };
 
 export function CustomMDX(props) {

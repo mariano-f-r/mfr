@@ -1,0 +1,183 @@
+---
+title: "On State Machines"
+author: "Mariano Rodriguez"
+desc: "State machines, an elegant way to consider and transform your data into results"
+tags: "State machines, code"
+date: "3/16/2025"
+image: "/clockwork.jpg"
+---
+
+I happen to have spent a decent amount of time writing parsers.
+A lot of time.
+The first time I wrote a parser was when I was working on [vexdoc](https://github.com/mariano-f-r/vexdoc).
+It was a relatively simple parser, all it did was parse when the opening and closing format for my documentation format was.
+
+In school, through various recitations and "machine problems", I've spent a not insignificant amount of time writing parsers as well.
+
+The one thing that all of these parsers that I've written have had in common, is that when tackling them, whatever initial 
+approach I was using gave way to a better one: the state machine.
+
+# "What is he talking about?"
+Happy you should ask! A state machines is a collection of states that can be reached from each other through transitions.
+
+Admittedly such an explanation is almost nonsensical given it's hard to visualize. 
+Here's something a bit more tangible from the real world:
+
+![A simple state machine](https://uploads.gamedev.net/monthly_06_2013/ccs-209764-0-84996300-1370053229.jpg)
+This is a state machine describing a light switch. A light switch, quite obviously, has two states, on or off 
+(unless you are little kid trying to balance the light switch perfectly in the middle, in which case it has three).
+From these states, very naturally, there are now transitions. Turning an off light switch on changes the state of the
+light to on, and so on. Turning an off light switch off does nothing.
+
+Admittedly, this is a rather plain example, So let's look at a different, more interesting example. 
+There is one state machine in particular that has been pervasive in pop culture since the 80s:
+
+![The Mario State Machine](https://www.ashishvishwakarma.com/GoF-Design-Patterns-by-Example/State-Pattern/assets/mario-finite-state-machine.jpg)
+Take a look, there's states, and transitions between states. Mario is a state machine.
+
+There are a whole lot of things in the world that can be modeled by state machines, things from traffic lights, to automatic control systems.
+
+# Back to Parsers
+
+As to how parsers can be elegantly represented as state machines, I sort of stumbled on that by accident while working on `vexdoc`.
+
+The premise of how `vexdoc` works is as follows:
+1. User writes code
+1. User adds special comments denoting significant parts of code
+1. User writes some info about these significant parts of code
+1. `vexdoc` strips these from the source files and generates some HTML documentation for it 
+
+The format is relatively simple:
+
+```python
+#! The Foo Function
+"""startsummary
+The foo function prints Foo!
+endsummary"""
+def foo():
+  print("Foo!")
+# ENDVEXDOC
+
+def bar():
+  print("Bar!")
+```
+
+Some configuration can be done to use any different language.
+
+The original way I had planned to do this boiled down to the following pseudocode (which admittedly is a bit OCaml-y so bear with me):
+```
+is_vexdoc = false
+is_summary = false
+is_source = false
+
+title = ""
+summary = ""
+source = ""
+
+for line in file
+  if line.startsWith "//!"
+   title = line
+   is_vexdoc = true
+  else if line.endsWith "ENDVEXDOC"
+    is_vexdoc = false
+    writeToHtml title summary source
+  else if is_vexdoc && line.endsWith "startsummary"
+    is_summary = true
+
+// you see where this is going
+```
+
+Gross. It is so hacky and ad-hoc, and would be terrible to maintain.
+The basic idea is correct though, the parser needs to transition to doing different things dependent on what it has encountered during the parsing process.
+
+Hmm. Transitions... That's what tipped me off as to what the correct tool for the job is. So then,
+
+# Let's Make a State Machine
+
+The first thing we need to consider to make a state machine is of course, the states.
+In the case of `vexdoc` these states directly correspond to what the parser should be doing.
+
+Very obviously, there will be lines where `vexdoc` has nothing to do.
+Namely lines that fall outside any documentation blocks should be ignored. Since `vexdoc` shouldn't record anything unless it's in a documentation block,
+this state is a natural starting point.
+
+Lines that match a title for a documentation block also represent a state, that of beginning a documentation block.
+From there, having another state being reading text inside a summary for a doc-block is only natural
+(summmaries make sense only in the context of something to summarize).
+
+The last state we should have is a state for any lines of code after the summary. 
+
+For `vexdoc`, I represented these as a Rust `enum`:
+```rust
+enum ParserState {
+    Ignore,
+    Title,
+    ItemSummary,
+    Code,
+}
+```
+
+And now to decide our transitions.
+These follow rather naturally from our 4 states:
+![The vexdoc parser's state machine](/vexdoc-state-machine.png)
+
+And now that this is done, the result can be written as code fairly simply:
+```rust
+let mut state = ParserState::Ignore;
+let mut included = String::new();
+for line in file {
+  match state {
+    ParserState::Ignore => {
+      if is_title(line) {
+        state = ParserState::Title
+        // I'm using build_html so actually making an html component is quite boilerplate-y
+        write_as_h1(line);
+      }
+    }
+    ParserState::Title => {
+      // since we've already gotten a title, the next line should be the start of the summmary
+      if is_summary(line) {
+        state = ParserState::ItemSummary;
+      } else {
+        // the actual user error reporting is better
+        return Err("Expected summary")
+      }
+    }
+    ParserState::ItemSummary => {
+      if is_summary_end(line) {
+        state = ParserState::Code;
+        write_as_p(included);
+        included.clear();
+      } else {
+        included += line;
+      }
+    }
+    ParserState::Code => {
+      if is_vexdoc_end() {
+        state = ParserState::Ignore;
+        write_as_pre_code(included);
+        included.clear();
+      } else {
+        included+=line;
+      }
+    }
+  }
+}
+```
+
+Does this seem a bit longer than if we used a bunch of if-statements?
+Probably.
+Is this more maintainable than those if-statements?
+Absolutely.
+
+That's the thing I like most about state-machines.
+They are easy to reason about, and it's easy to get data to flow as part of these transitions and states.
+In the case of `vexdoc`, data is what drives the transitions, and the behavior is dependent on what state the machine is in.
+
+# To Close
+
+State machines a truly powerful construct, and their usage extends far beyond parsers like the one's I've spent a lot of my time building.
+A lot of robotics uses state machines, game developers use state machines for video game AI, compilers and lexers use state machines under the hood.
+On top of this, because of their closed nature, they can be mathematically proven, for when maximum precision is required.
+So, the next time you see yourself receiving inputs and bouncing back between different behaviors depending on that input, ask yourself:
+could I use a state machine?
