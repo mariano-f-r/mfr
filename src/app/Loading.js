@@ -12,7 +12,9 @@ export default function Loading({ onComplete }) {
       if (logIndex < logs.length - 1) {
         setVisibleLogs((prevLogs) => `${prevLogs}${logs[logIndex]}\n`);
         logIndex++;
-        logEndRef.current.scrollIntoView()
+        if (logEndRef.currrent != null) {
+          logEndRef.current.scrollIntoView()
+        }
       } else {
         onComplete();
         clearInterval(interval);

@@ -1,0 +1,370 @@
+---
+title: "Where Rubber Meets Road"
+author: "Mariano Rodriguez"
+desc: "A longer blog post on my year of technical work with the Illinois Space Society, and what came of it"
+tags: "Raspberry Pi, Rust, SPI, Embedded, Rocketry"
+date: "5/4/2025"
+image: "/sets3pastiche.png"
+---
+
+Honestly, one of the more exciting — if confusing — periods of my life was my very first month at college.
+For the first time in a very long time, things felt *new*. And what a feeling that was.
+So much to do, so much to see, and so many people to meet.
+
+That first point is what kicks off this story. 
+There are a whole lot of organizations at Illinois, and I was particularly excited to get involved in a technical organization, 
+as, since Illinois is an engineering school, surely it'd be absolutely kick-ass. So when Quad Day, the big student org fair,
+rolled around, I started looking for a cool technical RSO (Registered Student Organization). 
+The one problem? There were so, so many. I was overwhelmed with choices and, paralyzed by indecision, I ended up not choosing any.
+
+Fortunately, these organizations, seemingly cognizant of their own wow factor, provided a second chance: Engineering Night, a similar org
+fair, except only for engineering organizations.
+
+It was as the sun was setting on that golden fall day, painting the sky with orange hues, that I approached the ISS booth.
+I started talking to someone involved with the solid propulsion project within the organization, and we talked about what the organization does and what their
+objectives are, namely, trying to be the second college team to reach the Karman line, 100 kilometers up. Cool! This was something that I 
+wanted to give a shot, so, I sprung a question of personal importance.
+
+"Would a CS major fit into this org well?"
+
+"Yeah, the subteam I'm in charge of is doing some work with a Raspberry Pi Zero, we're trying to program it as part of a rocket motor test stand."
+
+Color me intrigued.
+
+So, of course, being qualified, I responded,
+
+"Oh cool, I've done quite a lot of work with the Raspberry Pi and I'm interested, when are y'all meeting?"
+
+"Mondays, 7:00, at Everitt"
+
+And just like that, I had found an RSO to join. I still had no idea what to expect, still had no idea how useful I would be, and still had no idea if I would even like it,
+but at the very least, I now had a bit more direction than I did previously.
+
+# Getting Started
+
+And good thing I did! The first meeting with the organization turned out to be very fruitful. After doing a few clerical things, like paying society 
+dues (space is expensive), and getting added to the society-wide Slack group, we started talking shop. The Solid Propulsion (Solid) project
+is responsible for developing rocket motors made with solid rocket fuel, with their long term goal being to manufacture rockets for a potential Karman
+line attempt. Part of doing this (and part of the engineering process in general) is reviewing and improving your work based on past performances.
+Those numbers have to be gotten somewhere, and up until that point, Solid was using a test stand called SETS_2, which used an Arduino, and a load cell
+to quantify this data by doing "hotfires", wherein the rocket motor is fired while hooked up to the sensors. This produces important, telling, statistics,
+like the thrust curve of a motor, which can be compared to theoretical calculations about the motor and see how well a certain chemical formula or motor interior
+works.
+
+SETS_2 had a few problems. Firstly, it was limited only to thrust curves, on the count of only having a load cell. Other metrics like motor temperature
+and internal pressure were not available. Secondly, its structure was somewhat small, and would not be able to accomodate some of the larger motors that were 
+slated to undergo manufacturing and testing. Thirdly, because of what it was, its Data AcQuisition system was rudimentary, with its running procedure being
+somewhat involved, requiring someone to connect their laptop via serial, and, using Arduino IDE, start the program on the Arduino, and, at the same time,
+start a (janky) Python script that would read the Arduino's STDOUT on the serial connection, parse it, and then render a graph using Tkinter, while simultaneously
+writing it to a CSV. All while being a USB cable's distance from a live rocket motor. Understandably so, Solid had set their eyes on the sequel, SETS_3. It would 
+be bigger, use a Raspberry Pi Zero 2 W as the computing power, and would include a whole hell of a lot more sensors.
+
+My timing was impeccable; I had joined just in time for them to start manufacturing it.
+
+My main task would be to write the code needed to make the DAQ (shown below) interface with the sensors and record all the data (makes sense, I am a CS major after all).
+
+![The Data AcQuisition module](/daq_kicad.png)
+
+Those peripheral sensors, including a load cell, a pressure transmitter, some thermocouples, and various SPI devices, are connected to the Pi's pins via this PCB, which
+provides an ADC, some of the SPI peripherals, a battery bank, a mux and some op-amps for the analog peripherals that go through the screw terminals.
+
+Simple, I thought. Just reading from an ADC and some SPI peripherals and then writing to disk didn't seem like it would take a long time. This'll just be a one semester
+project. Easy even.
+
+# Some Assembly Required
+
+But before I could begin programming the Pi to access the peripherals via the PCB, the PCB had to be built. The team had ordered some premade trace boards for DAQ, but none
+of the surface mounted components were installed. Soldering was a fairly simple task, this shouldn't take long, I thought to myself. However, one key difference made it so
+that this task was more challenging than ordinary: surface mounted components are absolutely miniscule. Because of this, we had to use micro-soldering, which uses a hot air
+gun to melt solder instead of an iron.
+
+Hot air soldering takes forever.
+
+We spent about 3 months of engineering time soldering and resoldering the PCB, working at a snail's pace.
+
+![soldering](/soldering.JPEG)
+
+When all was finally done, I plugged in the Pi to the PCB, and put in the batteries. And it started bootlooping, with the status light blinking at seemingly random intervals. Some quick
+electrical testing showed that there was a short somewhere. Great. So we did another round of resoldering, and tried again. Same deal. By this time it was December, and this project
+—which I had haphazardly told myself would take a few months at most—had been going the entire semester.
+
+We didn't manage to finish it before the fall semester ended, but by the start of the spring semester, we were able to get the Pi booting, at least, as indicated by the status light 
+becoming a solid after about 20 seconds of being connected to power. No shorts by the look of it. Getting it connected should be simple from here.
+
+# Or Not
+
+My original plan to get connected to the Raspberry Pi was to use a lovely feature that the Raspberry Pi Imager comes with, namely, preconfiguring a WiFi network.
+I was going to preconfigure the Pi to connect to my laptop's hotspot, and then use `ssh` to get console access to run my binary and `scp` to get it onboard. So, while soldering
+was occurring in the fall semester, I went ahead and did it. This actually worked perfectly well. Unfortunately, a few mitigating occurences happened that caused this plan to fall apart.
+It turns out, in all the resoldering we had been doing, the power socket for the Raspberry Pi had lifted, losing contact. We originally thought the whole board was dead,
+and were planning to order a new one, but through sheer luck, I ended up noticing that the Pi did boot successfully if I held the power socket down. Of course, such an issue made this Pi
+unfit for its purpose, so we had to order another one. Simultaneously, my laptop broke. When we got the new Pi, and new laptop, I tried the imaging process again; however, this time
+it didn't work. We had a look inside the microSD card, and found that the NetworkManager configuration files were correct, so clearly it should be working. Strange. So we tried someone
+else's phone hotspot as an intermediary network, and reimaged the Pi with this as the connection. Still nothing. Very strange. So what gives? We suspected the change from `wpa_supplicant` to 
+`NetworkManager` on Raspberry Pi OS may have caused some issues when connecting to mobile hotspots. So we ordered a miniHDMI cable and a USB hub to just interface with a keyboard and monitor.
+Using them, I was able to connect to the school wireless using `nmcli`, and then get `ssh` and `scp` working as I originally intended. Annoyingly, we still couldn't get it to connect to any
+hotspot. Fortunately, the organization did have a few wireless routers that we could borrow for hotfire time, and so, I just got the Pi to connect to those instead. Smooth sailing from there.
+
+By the time this all got done, it was March. But at long last, the programming could finally start.
+
+# Preparing the Eyewitness
+
+And now came the part I signed up for—writing the code that would end up running on the Pi during the hotfire. My stack of choice? What else but the tools I trust for speed and power? 
+[Rust](https://www.rust-lang.org/) would be the driver for this project, as it aligned well with my concerns, namely speed, since hotfires are over in seconds, and to be honest, it's
+just a really pleasant language to work with. To interface with the Pi, I reached for [RPPAL](https://crates.io/crates/rppal) (Raspberry Pi Peripheral Access Library), with which I had
+some prior degree of familiarity.
+
+The program itself is quite simple. In pseudocode, it boils down to the following:
+```rust
+fn main() {
+  set_up_sensors();
+  open_file();
+
+  while running {
+    record_data();
+    write_to_file();
+  }
+}
+```
+
+File IO isn't too bad, so most of the work that I needed to do involved interfacing with the sensors. There are many different kinds of serial protocols that sensors in embedded
+hardware use, but fortunately, the PCB designer had made it so that all peripherals used a protocol called SPI (Serial Peripheral Interface).
+
+SPI works by having one master device, in charge of communicating one or more slave devices. Each slave device is wired to the master via a clock line (SCLK), a chip select line (SS),
+and a Master Out Slave In (MOSI) and Master In Slave Out (MISO) line, responsible for the carrying the master's signals out to the slaves, and the slave's signals in to the master, respectively.
+
+![spi](/SPI.png)
+
+In the case of every device onboard the DAQ, an SPI transaction starts when the chip select line goes from logic high (binary 1) to logic low (0). Simultaneously, the clock
+starts pulsing at a specified period, which dictates how long a bit should take to be sent over, not unlike a conductor maintaining tempo in an orchestra. While the clock pulses,
+the master and slave conduct their transaction, which is arbitrary in form and different from peripheral to peripheral. Once the transaction is done finishes, the chip select line goes high, and
+the clock stops pulsing.
+
+![the ADC's transaction](/adctransaction.png)
+Above: the ADC's transaction involves the master sending three control bits (ADDx) for the next conversion, while the ADC sends its conversions in parallel, starting
+with 4 zeroes (Zx).
+
+As for how to implement these transactions, RPPAL has made this quite easy by providing the `Spi` type, which encapsulates SPI devices and provides a nice interface for setting 
+them up. For dealing with those arbitrary transactions, RPPAL provides the `Segment` for modeling the actual transaction itself as segments, wherein each segment represents a portion
+of the transaction where the master is sending data, the slave is sending data, or both are sending data. It's a clean abstraction, hats off.
+
+One slight detail made this slightly more involved than just writing this out as code, however. The Pi has some default pins for SPI transactions, but a few things 
+prevented us from using them, namely, the fact that we had more peripherals than the default layout had pins. The PCB designer had designated GPIO 10 for MOSI, GPIO
+9 for MISO, and GPIO 11 for the clock, which are the default pins for SPI on SPI bus 0 (spi0). Ok, cool, so we'll just use them. Because we had more peripherals than 
+pins however, he had to assign some extra chip select lines to other pins not included among these default pins.
+
+This arbitrary selection seemed problematic at first, but fortunately, the Pi has a mechanism to deal with this: device trees. Device trees are a data structure that
+describe the various hardware components of a computer for later use by the operating system. My plan was to configure the arbitrary pins from before as chip select
+pins in addition to some of the defaults via a device tree overlay, wherein modifications are *overlayed* on top of the original device tree. Here's how that looked
+like as a device tree source file.
+
+```
+/dts-v1/;
+/plugin/;
+
+
+/ {
+	compatible = "brcm,bcm2835";
+
+	fragment@0 {
+		target = <&spi0_cs_pins>;
+		frag0: __overlay__ {
+			brcm,pins = <8 7 5 20>;
+		};
+	};
+
+	fragment@1 {
+		target = <&spi0>;
+		frag1: __overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			cs-gpios = <&gpio 8 1>, <&gpio 7 1>, <&gpio 5 1>, <&gpio 20 1>;
+			status = "okay";
+
+			spidev0_2: spidev@2 {
+				compatible = "spidev";
+				reg = <2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				spi-max-frequency = <125000000>;
+			};
+
+			spidev0_3: spidev@3 {
+				compatible = "spidev";
+				reg = <3>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				spi-max-frequency = <125000000>;
+			};
+		};
+	};
+};
+```
+
+This file looks somewhat complicated, but the important parts aren't too bad: `fragment@0` configures pins 5, 7, 8, and 20 as chip select pins, while `fragment@1` configures
+some new SPI devices as device files for the booted Linux system, `/dev/spi0.2` and `/dev/spi0.3` respectively. It also associates them with the corresponding `cs-gpios`.
+Once I wrote this up, I compiled it, and stashed it in `/boot/overlays`, after which, to activate this overlay, I added the following line to `/boot/config.txt`:
+
+```
+dtoverlay=extended-cs-lines
+```
+
+After rebooting the Pi to confirm that this had worked, I was finally able to start writing code.
+
+I began by roughly following the pseudocode I laid out for myself, starting with configuring the SPI devices, a process trivialized by RPPAL's well thought out datatypes:
+```rust
+// Configuring the TI ADC124S01
+let adc = Spi::new(
+    Bus::Spi0,
+    SlaveSelect::Ss2, // CS line
+    12000000, // hertz
+    Mode::Mode0
+  )
+  .expect("Should be able to configure ADC on CS line 2");
+```
+
+This code configures the ADC to be used with spi0, chip select pin 2, a clock speed of 12MHZ (well within the ADC's range to avoid too low or too high frequency), 
+and with [SPI mode 0](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Clock_polarity_and_phase). From here, we can now read from these devices by setting
+up the transaction. Here's how that looked like with the temperature sensor:
+```rust
+// TMP126
+const TMP_READ_WORD: [u8; 2] = [0x01, 0x00];
+const TMP_CONVERSION_FACTOR: f32 = 0.03125;
+
+fn main() {
+  // --snip--
+    let mut temp1_readings = [0u8, 0u8];
+    let temp1_xfer = [
+      Segment::with_write(&TMP_READ_WORD),
+      Segment::with_read(&mut temp1_readings),
+    ];
+
+    let mut final_temp = 0.0;
+    
+    if let Ok(()) = temp1.transfer_segments(&temp1_xfer) {
+      let temp = (((temp1_readings[0] as u16) << 8) | temp1_readings[1] as u16) >> 2;
+      if temp & 0b0010000000000000 == 0 {
+        final_temp = f32::try_from(temp).unwrap() * TMP_CONVERSION_FACTOR;
+      } else {
+        let temp = (0b1000000000000000 | (temp & 0b0001111111111111)) as i16;
+        final_temp = f32::try_from(temp).unwrap() * TMP_CONVERSION_FACTOR;
+      }
+    }
+  // --snip--
+}
+```
+
+In this case, the temperature sensor has a 16-bit (2 byte) command word, which tells the device what data to return. The command word that we send first in the transfer corresponds
+to a read from register 0. After this, the temperature sensor will send 16 bits of data back. In the case of register 0, these 16 bits of data are a 14-bit two's complement number
+corresponding to temperature in celsius, padded by two zeroes.
+
+Once we've extracted the data, a bit of processing is necessary to change the 14 bit number into a usable 16 bit signed integer, namely, moving the sign bit to where it belongs.
+The eagle-eyed amongst you may have realized that this processing makes the number inaccurate when it goes negative, and to that, I'll agree. However, since we were well into springtime
+by this point, the chance of having a day below 0 degrees celsius was unlikely. If cold propulsion ever becomes a thing, some bit-twiddling to make this a complete sign extension should
+fix this.
+
+Rinse and repeat for the other sensors, and like that, we were grabbing data from everything. Now to record it all.
+
+My original plan was to simply write to the file each iteration of the loop. Simple and easy. But I figured I should probably check to see if that was going to become a high contention
+operation. So I asked:
+
+"Just how much data do you want me to get?"
+
+"A hundred times a second should be enough."
+
+A hundred times per second, eh? Well it certainly makes no sense to write to the file a hundred times per second if I could just make a buffer and flush this buffer every once in a
+while. So I did. Rust provides a lovely standard library type to do this, the `BufWriter`. All I had to do was wrap the file handle in one of them, like so:
+```rust
+let csv = File::create("launches/launch_stats.csv")
+  .unwrap();
+
+let mut buf_writer = BufWriter::new(csv);
+```
+
+Now I can just write to this buffered writer like any other file, and it'll flush at a predetermined size (4KB by default, but configurable). The only extra overhead is that
+now right after the main loop ends, I need to call `buf_writer.flush()` to finish writing the contents of the buffer to the file. With that, programming was 
+complete, onto the deployment.
+
+
+# Day Of
+
+That morning, I felt like a giant spring, tightly wound and waiting to be released. A year's worth of work, delays, technical issues (which I've very much minimized in this post),
+and progress had all led to this. I arrived in the morning to the Optical Physics and Engineering Lab (OPEL) to help pack, and after about an hour, we hit the road to the local
+airport. We arrived around 2 PM, and immediately began preparation, starting with wiring up the sensors.
+
+![Some Wiring](/wiring.JPG)
+Here I am wiring up the pressure transmitter.
+
+After this, we were then set to begin testing to make sure the sensors were configured correctly and reading data properly. Unfortunately, we had a last minute
+hiccup. When it came time to connect to the DAQ over `ssh`, it did not appear as a valid IP. Panic. Trying to keep this down, I ran `arp-scan` to see if the router
+had assigned the Pi a new IP. No dice. I was stumped. The Pi was on, the router was on, and it's network was available to my laptop, so there shouldn't
+have been an issue. I knew that this could 100% be fixed by connecting to it via the monitor and keyboard from earlier, logging in, and connecting it manually,
+but I wanted to avoid the drive back for fear of missing vital prep time, even though we were ahead of schedule. So I sat there, on a pile of rocks next to the test stand,
+puzzled and anxious. 
+
+And then I saw it. In the corner of my screen, I saw a WiFi network:
+
+"smart-thermostat2 - WPS"
+
+As it turns out, the DAQ was connecting to this open smart thermostat network instead of the password protected router that we brought along. I'm guessing that the Pi
+must've preferred the open WPS network to the password protected WPA one. Looks like we needed to make the drive back anyways. Argh.
+
+![Cheese](/cheese.JPG)
+This man did not know about the smart thermostat.
+
+Once we got back with the stuff, we were finally able to get the Pi to connect to the router. We then promptly got to testing every sensor and confirming
+data was being received. Once we finished up, we wired up all the sensors, and, since we were ahead of schedule, went to go play catch.
+
+![Test Stand minus the rocket motor](/finished.JPEG)
+
+After a bit of tomfoolery, we were told to clear the area by the hybrid propulsion team, who we were sharing the space with for the day's hotfire. We went about 70 meters
+out, into the grass and sat, anticipating the countdown. After a while, it came:
+
+"T-5, 4, 3, 2, 1"
+
+![The Hybrid Hotfire](/hybridhotfire.jpg)
+
+I don't think I've ever witnessed something so energetic in my life. As soon as the countdown ended, my ears were filled with an earsplitting screaming, sounding almost like a
+TIE fighter. I even felt the noise in my chest, like a deep rattling. It was also visually stunning, ripping a brilliant gash into the air. The flame itself must have been 20
+feet tall.
+
+Not 15 seconds later, it was done.
+
+Sweet. Now us.
+
+# T-Minus Five
+
+All that was left to do was to install the motor, a process that only took a couple of minutes. After that, a sort of quiet, nervous anticipation took over, the kind typical
+right before a college final. The operations team and I made our way over to our designated zone, and began final preparations. The air was thick with tension as I `ssh`ed 
+into the DAQ, not for testing or diagnostics, but after all that time, to run my program for real.
+
+"T-10, 9, 8"
+
+It had taken a year to get to this point, but it was all about to pay off.
+
+"7, 6, 5"
+
+At 5 seconds out, I started the program, as outlined in our ignition protocol. Heartbeat data streamed through the `ssh` console.
+
+"4, 3, 2, 1, ignition"
+
+The first thing I heard was the click of the electronic match trigger. Not a millisecond later, the motor roared to life. But something was wrong. Flames started
+flickering out of the bottom part of the test stand. And then, *crunch*. The test stand failed.
+
+# Post Mortem
+
+As soon as it was safe to do so, we approached the test stand. Suffice to say, the launch pad was a bit of a mess, and the state we found the test stand in was entirely unenviable.
+Pieces of the propellant were littered around the stand, the rocket motor had relocated itself a short ways away, and the cylinder assembly that held the pressure transmitter had
+been pushed down into the load cell.
+
+The DAQ wasn't spared either. The thermocouples that were attached to the motor casing had been burned black, the load cell cables were torn clean off the load cell, and the green plastic
+casing and one of the baby blue screw terminals were now a charred black. But amazingly, the status light on the Pi was still blinking, and heartbeat data was still flowing through the `ssh` session.
+The hotfire may have failed, but we had data for every hundredth of a second during that failure.
+
+![RIP](/rip.JPEG)
+
+We were quick to identify the cause of the failure after the fact: some threads holding the motor in place had sheared, causing a hole in the enclosure. The damage the stand
+withstood was all symptomatic of this root cause.
+
+It's unfortunate. Not all stories end in triumph. But at least the part I created worked. And honestly, that's all I could have asked for.

@@ -47,7 +47,7 @@ export default async function Blog() {
 								</li>
 							))
 							.toSorted((a, b) => {
-								console.log(a, b);
+								// console.log(a, b);
 								const pattern = /(\d{2})\/(\d{2})\/(\d{4})/;
 								let real_date_a = new Date(
 									String(a.key).replace(pattern, "$3-$2-$1"),
@@ -56,8 +56,8 @@ export default async function Blog() {
 									String(b.key).replace(pattern, "$3-$2-$1"),
 								);
 
-								console.log(real_date_a);
-								console.log(real_date_b);
+								// console.log(real_date_a);
+								// console.log(real_date_b);
 
 								return real_date_b - real_date_a;
 							})}
