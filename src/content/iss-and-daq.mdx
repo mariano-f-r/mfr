@@ -82,7 +82,7 @@ Hot air soldering takes forever.
 
 We spent about 3 months of engineering time soldering and resoldering the PCB, working at a snail's pace.
 
-![soldering](/soldering.JPEG)
+<CaptionImage image="/soldering.JPEG" caption="A typical evening" w="500" h="500" float="right" />
 
 When all was finally done, I plugged in the Pi to the PCB, and put in the batteries. And it started bootlooping, with the status light blinking at seemingly random intervals. Some quick
 electrical testing showed that there was a short somewhere. Great. So we did another round of resoldering, and tried again. Same deal. By this time it was December, and this project
@@ -140,9 +140,7 @@ starts pulsing at a specified period, which dictates how long a bit should take 
 the master and slave conduct their transaction, which is arbitrary in form and different from peripheral to peripheral. Once the transaction is done finishes, the chip select line goes high, and
 the clock stops pulsing.
 
-![the ADC's transaction](/adctransaction.png)
-Above: the ADC's transaction involves the master sending three control bits (ADDx) for the next conversion, while the ADC sends its conversions in parallel, starting
-with 4 zeroes (Zx).
+<CaptionImage image="/adctransaction.png" caption="The ADC's transaction involves the master sending three control bits (ADDx) for the next conversion, while the ADC sends its conversions in parallel, starting with 4 zeroes (Zx)." w="1800" h="800" />
 
 As for how to implement these transactions, RPPAL has made this quite easy by providing the `Spi` type, which encapsulates SPI devices and provides a nice interface for setting 
 them up. For dealing with those arbitrary transactions, RPPAL provides the `Segment` for modeling the actual transaction itself as segments, wherein each segment represents a portion
@@ -289,12 +287,12 @@ complete, onto the deployment.
 
 # Day Of
 
+<CaptionImage image="/wiring.JPG" caption="Wiring up the pressure transmitter" w="300" h="200" float="left" />
+
 That morning, I felt like a giant spring, tightly wound and waiting to be released. A year's worth of work, delays, technical issues (which I've very much minimized in this post),
 and progress had all led to this. I arrived in the morning to the Optical Physics and Engineering Lab (OPEL) to help pack, and after about an hour, we hit the road to the local
 airport. We arrived around 2 PM, and immediately began preparation, starting with wiring up the sensors.
 
-![Some Wiring](/wiring.JPG)
-Here I am wiring up the pressure transmitter.
 
 After this, we were then set to begin testing to make sure the sensors were configured correctly and reading data properly. Unfortunately, we had a last minute
 hiccup. When it came time to connect to the DAQ over `ssh`, it did not appear as a valid IP. Panic. Trying to keep this down, I ran `arp-scan` to see if the router
@@ -303,27 +301,28 @@ have been an issue. I knew that this could 100% be fixed by connecting to it via
 but I wanted to avoid the drive back for fear of missing vital prep time, even though we were ahead of schedule. So I sat there, on a pile of rocks next to the test stand,
 puzzled and anxious. 
 
+<CaptionImage image="/cheese.JPG" caption="This man did not know about the smart thermostat" w="400" h="300" float="right"/>
 And then I saw it. In the corner of my screen, I saw a WiFi network:
+
 
 "smart-thermostat2 - WPS"
 
 As it turns out, the DAQ was connecting to this open smart thermostat network instead of the password protected router that we brought along. I'm guessing that the Pi
 must've preferred the open WPS network to the password protected WPA one. Looks like we needed to make the drive back anyways. Argh.
 
-![Cheese](/cheese.JPG)
-This man did not know about the smart thermostat.
+
+<CaptionImage image="/finished.JPEG" caption="Test stand awaiting motor" w="400" h="300" float="left" />
 
 Once we got back with the stuff, we were finally able to get the Pi to connect to the router. We then promptly got to testing every sensor and confirming
 data was being received. Once we finished up, we wired up all the sensors, and, since we were ahead of schedule, went to go play catch.
 
-![Test Stand minus the rocket motor](/finished.JPEG)
 
 After a bit of tomfoolery, we were told to clear the area by the hybrid propulsion team, who we were sharing the space with for the day's hotfire. We went about 70 meters
 out, into the grass and sat, anticipating the countdown. After a while, it came:
 
 "T-5, 4, 3, 2, 1"
 
-![The Hybrid Hotfire](/hybridhotfire.jpg)
+<CaptionImage image="/hybridhotfire.jpg" caption="The hybrid hotfire" w="1200" h="800"/>
 
 I don't think I've ever witnessed something so energetic in my life. As soon as the countdown ended, my ears were filled with an earsplitting screaming, sounding almost like a
 TIE fighter. I even felt the noise in my chest, like a deep rattling. It was also visually stunning, ripping a brilliant gash into the air. The flame itself must have been 20
@@ -362,7 +361,7 @@ The DAQ wasn't spared either. The thermocouples that were attached to the motor 
 casing and one of the baby blue screw terminals were now a charred black. But amazingly, the status light on the Pi was still blinking, and heartbeat data was still flowing through the `ssh` session.
 The hotfire may have failed, but we had data for every hundredth of a second during that failure.
 
-![RIP](/rip.JPEG)
+<CaptionImage image="/rip.JPEG" caption="RIP" w="400" h="600" float="right" />
 
 We were quick to identify the cause of the failure after the fact: some threads holding the motor in place had sheared, causing a hole in the enclosure. The damage the stand
 withstood was all symptomatic of this root cause.
